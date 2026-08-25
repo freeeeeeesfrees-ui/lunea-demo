@@ -41,11 +41,14 @@
     filter:blur(26px) brightness(1.03);
     transform:scale(1.12); /* ぼかしの縁を画面外へ */
   }
-  /* 縦長画面では映像をノートリミングで見せ、余白はぼかし背景で埋める */
+  /* 縦長画面のフォールバック（縦動画が使えない場合）：横動画をノートリミング表示 */
   @media (max-aspect-ratio: 3/4){
-    #film{object-fit:contain;object-position:50% 18%} /* 映像帯はヘッダー直下、カードは下部で棲み分け */
+    #film{object-fit:contain;object-position:50% 18%}
     .film-bg{display:block}
   }
+  /* 縦動画がロードされたら全画面カバー表示（JSが body に付与） */
+  body.portrait-film #film{object-fit:cover;object-position:center}
+  body.portrait-film .film-bg{display:none}
   body.no-video #film{display:none}
   body.no-video .film-fallback{display:block}
   .vignette{
@@ -191,9 +194,9 @@
 
 <div id="loader"><div class="mark">LUNÉA</div><div class="note">LOADING FILM</div></div>
 
-<!-- ブランドムービー：スクロールでコマ送り再生 -->
+<!-- ブランドムービー：スクロールでコマ送り再生（src は画面の向きに応じて JS が設定） -->
 <div class="film-bg" aria-hidden="true"></div>
-<video id="film" src="assets/lunea-film.mp4" poster="assets/poster.jpg"
+<video id="film" poster="assets/poster.jpg"
        muted playsinline preload="auto" aria-label="LUNÉA ブランドムービー：ボトルから一滴が生まれ、肌になじむまで"></video>
 <img class="film-fallback" src="assets/poster.jpg" alt="LUNÉA モイストエッセンスローションのボトル">
 <div class="vignette"></div>
@@ -289,6 +292,28 @@ const video = document.getElementById('film');
 const FALLBACK_DURATION = 20.04;
 const filmDuration = () =>
   (isFinite(video.duration) && video.duration > 0) ? video.duration : FALLBACK_DURATION;
+
+/* 画面の向きに応じて横版/縦版の動画を選択（回転時は再生位置を引き継ぐ） */
+const SOURCES = {
+  landscape: { src: 'assets/lunea-film.mp4',          poster: 'assets/poster.jpg' },
+  portrait:  { src: 'assets/lunea-film-portrait.mp4', poster: 'assets/poster-portrait.jpg' }
+};
+const portraitMq = window.matchMedia('(max-aspect-ratio: 3/4)');
+function applySource(){
+  const s = portraitMq.matches ? SOURCES.portrait : SOURCES.landscape;
+  if (video.getAttribute('src') === s.src) return;
+  const frac = (isFinite(video.duration) && video.duration > 0) ? (video.currentTime / video.duration) : 0;
+  document.body.classList.toggle('portrait-film', portraitMq.matches);
+  video.poster = s.poster;
+  video.src = s.src;
+  video.load();
+  video.pause();
+  video.addEventListener('loadedmetadata', () => { video.currentTime = frac * video.duration; }, { once: true });
+}
+applySource();
+if (portraitMq.addEventListener) portraitMq.addEventListener('change', applySource);
+else portraitMq.addListener(applySource);
+window.addEventListener('resize', applySource); // 回転検知の保険
 
 video.pause();
 
