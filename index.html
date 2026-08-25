@@ -13,11 +13,11 @@
   :root{
     --ink:#232327;        /* チャコール（映像のキャップ・文字） */
     --paper:#e9e8e6;      /* スタジオグレー（映像の背景色） */
-    --sub:#6d6d72;
+    --sub:#54545b;
     --silver:#a9adb5;     /* シルバーキャップ */
-    --rose:#c98d96;       /* リップ・素肌のロゼ */
-    --card-bg:rgba(255,255,255,.62);
-    --card-line:rgba(255,255,255,.75);
+    --rose:#a4606c;       /* リップのロゼ（可読性のため濃いめ） */
+    --card-bg:rgba(255,255,255,.78);
+    --card-line:rgba(255,255,255,.85);
   }
   *{margin:0;padding:0;box-sizing:border-box}
   body{
@@ -82,7 +82,7 @@
     font-family:'Marcellus',serif;font-size:.8rem;letter-spacing:.4em;
     color:var(--rose);text-transform:uppercase;margin-bottom:1.1rem;
   }
-  h1{font-size:clamp(2.4rem,7.5vw,5rem);font-weight:700;line-height:1.28;letter-spacing:.05em}
+  h1{font-size:clamp(2rem,6vw,4rem);font-weight:700;line-height:1.32;letter-spacing:.05em}
   h2{font-size:clamp(1.7rem,4.6vw,3rem);font-weight:700;line-height:1.35;letter-spacing:.05em;margin-bottom:1rem}
   .lead{font-size:clamp(.95rem,1.6vw,1.08rem);font-weight:400;line-height:2;color:var(--sub)}
 
@@ -105,12 +105,21 @@
      ing  300-490vh ≒ 9.4-15.3s: 塗布〜なじませ
      cta  490-640vh ≒ 15.3-20s : 微笑みと商品   */
   .sec-hero{min-height:100vh}
-  .sec-hero .inner{max-width:560px}
+  .sec-hero .inner{
+    max-width:640px;
+    background:rgba(240,239,237,.72);
+    border:1px solid rgba(255,255,255,.55);
+    border-radius:28px;
+    padding:clamp(1.6rem,4vw,2.8rem);
+    backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);
+    box-shadow:0 24px 60px rgba(40,42,55,.1);
+  }
   .sec-drop{min-height:100vh}
   .sec-skin{min-height:100vh}
   .sec-ing{min-height:190vh}
   .sec-cta{min-height:150vh}
-  .sec-cta .inner{max-width:520px}
+  .sec-cta .wrap{max-width:none}   /* ワイド画面ではカードを左端へ寄せ、顔とボトルを隠さない */
+  .sec-cta .card{max-width:520px}
 
   .scroll-cue{
     position:absolute;bottom:2.2rem;left:50%;transform:translateX(-50%);
@@ -127,7 +136,7 @@
   /* ingredients */
   .ing-list{display:flex;flex-direction:column;gap:1.4rem;margin-top:1.8rem}
   .ing{display:flex;gap:1.2rem;align-items:baseline}
-  .ing .no{font-family:'Marcellus',serif;font-size:1.5rem;color:var(--silver);min-width:2.4rem}
+  .ing .no{font-family:'Marcellus',serif;font-size:1.5rem;color:#82868f;min-width:2.4rem}
   .ing dt{font-weight:700;font-size:1.02rem;letter-spacing:.06em;margin-bottom:.25rem}
   .ing dd{font-size:.88rem;line-height:1.9;color:var(--sub)}
 
@@ -137,7 +146,7 @@
   .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.1rem}
   .chip{
     font-size:.75rem;letter-spacing:.1em;color:var(--ink);
-    background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7);
+    background:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.85);
     padding:.4em 1em;border-radius:999px;
   }
   .cta-btn{
@@ -239,7 +248,7 @@
   <!-- 5. CTA（15-20秒：微笑みと商品） -->
   <section class="sec-cta" id="cta">
     <div class="wrap">
-      <div class="inner" data-reveal>
+      <div class="card card--left" data-reveal>
         <p class="eyebrow">Lunéa Moist Essence Lotion</p>
         <h2>素肌が、<br>光を返す。</h2>
         <p class="price">¥4,290 <small>（税込）</small></p>
