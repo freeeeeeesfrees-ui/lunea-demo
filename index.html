@@ -35,6 +35,17 @@
     z-index:0;
   }
   .film-fallback{display:none}
+  .film-bg{
+    position:fixed;inset:0;z-index:0;display:none;
+    background:url('assets/poster.jpg') center/cover no-repeat;
+    filter:blur(26px) brightness(1.03);
+    transform:scale(1.12); /* ぼかしの縁を画面外へ */
+  }
+  /* 縦長画面では映像をノートリミングで見せ、余白はぼかし背景で埋める */
+  @media (max-aspect-ratio: 3/4){
+    #film{object-fit:contain;object-position:50% 18%} /* 映像帯はヘッダー直下、カードは下部で棲み分け */
+    .film-bg{display:block}
+  }
   body.no-video #film{display:none}
   body.no-video .film-fallback{display:block}
   .vignette{
@@ -168,9 +179,7 @@
 
   @media (max-width:640px){
     .card{max-width:100%}
-    .sec-hero,.sec-drop,.sec-skin{align-items:flex-end;padding-bottom:16vh}
-    .sec-ing{align-items:flex-end;padding-bottom:14vh}
-    .sec-cta{align-items:flex-end;padding-bottom:18vh}
+    .sec-hero,.sec-drop,.sec-skin,.sec-ing,.sec-cta{align-items:flex-end;padding-bottom:9vh}
   }
   @media (prefers-reduced-motion:reduce){
     .scroll-cue::after{animation:none}
@@ -183,6 +192,7 @@
 <div id="loader"><div class="mark">LUNÉA</div><div class="note">LOADING FILM</div></div>
 
 <!-- ブランドムービー：スクロールでコマ送り再生 -->
+<div class="film-bg" aria-hidden="true"></div>
 <video id="film" src="assets/lunea-film.mp4" poster="assets/poster.jpg"
        muted playsinline preload="auto" aria-label="LUNÉA ブランドムービー：ボトルから一滴が生まれ、肌になじむまで"></video>
 <img class="film-fallback" src="assets/poster.jpg" alt="LUNÉA モイストエッセンスローションのボトル">
