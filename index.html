@@ -3,67 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LUNÉA｜うるおいが、かたちになる。（架空ブランド・デモ）</title>
-<meta name="description" content="架空のスキンケアブランド LUNÉA のデモサイト。Three.js と GSAP ScrollTrigger によるスクロール連動3D演出のサンプルです。">
+<title>LUNÉA｜ひとしずくが、肌の記憶になる。（架空ブランド・デモ）</title>
+<meta name="description" content="架空のスキンケアブランド LUNÉA のデモサイト。スクロールに合わせてブランドムービーが再生される、GSAP ScrollTrigger による映像スクラブ演出のサンプルです。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#1b1c20;
-    --sub:#5f6470;
-    --paper:#f4f2ee;
-    --aqua:#7fb2c9;
-    --lavender:#a48fd0;
-    --card-bg:rgba(255,255,255,.58);
-    --card-line:rgba(255,255,255,.7);
+    --ink:#232327;        /* チャコール（映像のキャップ・文字） */
+    --paper:#e9e8e6;      /* スタジオグレー（映像の背景色） */
+    --sub:#6d6d72;
+    --silver:#a9adb5;     /* シルバーキャップ */
+    --rose:#c98d96;       /* リップ・素肌のロゼ */
+    --card-bg:rgba(255,255,255,.62);
+    --card-line:rgba(255,255,255,.75);
   }
   *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:auto}
   body{
-    font-family:'Zen Kaku Gothic New',sans-serif;
+    font-family:'Zen Kaku Gothic New','Hiragino Kaku Gothic ProN','Yu Gothic Medium','Yu Gothic','Meiryo',sans-serif;
     color:var(--ink);
-    background:linear-gradient(180deg,#f7f4ef 0%,#e8edf4 100%);
+    background:var(--paper);
     overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
   }
-  /* ---------- 3D canvas ---------- */
-  #webgl{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+
+  /* ---------- 背景の映像（スクロールでスクラブ） ---------- */
+  #film, .film-fallback{
+    position:fixed;inset:0;width:100%;height:100%;
+    object-fit:cover;object-position:center;
+    z-index:0;
+  }
+  .film-fallback{display:none}
+  body.no-video #film{display:none}
+  body.no-video .film-fallback{display:block}
   .vignette{
     position:fixed;inset:0;z-index:1;pointer-events:none;
-    background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(90,100,140,.12) 100%);
+    background:radial-gradient(120% 95% at 50% 42%,transparent 58%,rgba(40,42,50,.18) 100%);
   }
-  body.no-webgl #webgl{display:none}
 
   /* ---------- loader ---------- */
   #loader{
-    position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(180deg,#f7f4ef,#e8edf4);
+    position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;gap:1rem;
+    align-items:center;justify-content:center;
+    background:var(--paper);
     transition:opacity .3s;
   }
   #loader .mark{font-family:'Marcellus',serif;font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:.45em;padding-left:.45em;color:var(--ink);animation:pulse 1.6s ease-in-out infinite}
+  #loader .note{font-size:.72rem;letter-spacing:.3em;color:var(--sub)}
   @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
 
   /* ---------- chrome ---------- */
   .progress{
     position:fixed;top:0;left:0;z-index:30;width:100%;height:3px;
-    background:linear-gradient(90deg,var(--aqua),var(--lavender));
+    background:linear-gradient(90deg,var(--silver),var(--rose));
     transform:scaleX(0);transform-origin:left center;
   }
   header{
     position:fixed;top:0;left:0;right:0;z-index:20;
     display:flex;align-items:center;justify-content:space-between;
     padding:1.1rem clamp(1.2rem,4vw,3rem);
-    background:rgba(247,245,240,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    border-bottom:1px solid rgba(255,255,255,.5);
+    background:rgba(233,232,230,.5);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(255,255,255,.45);
   }
   .logo{font-family:'Marcellus',serif;font-size:1.25rem;letter-spacing:.38em;padding-left:.38em;text-decoration:none;color:var(--ink)}
   .nav-cta{
     font-size:.82rem;font-weight:500;letter-spacing:.12em;text-decoration:none;color:#fff;
     background:var(--ink);padding:.55em 1.5em;border-radius:999px;transition:transform .25s,box-shadow .25s;
   }
-  .nav-cta:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(27,28,32,.25)}
+  .nav-cta:hover,.nav-cta:focus-visible{transform:translateY(-2px);box-shadow:0 10px 24px rgba(35,35,39,.3)}
 
   /* ---------- sections ---------- */
   main{position:relative;z-index:2}
@@ -72,29 +80,38 @@
 
   .eyebrow{
     font-family:'Marcellus',serif;font-size:.8rem;letter-spacing:.4em;
-    color:var(--lavender);text-transform:uppercase;margin-bottom:1.1rem;
+    color:var(--rose);text-transform:uppercase;margin-bottom:1.1rem;
   }
-  h1{font-size:clamp(2.5rem,8.5vw,5.6rem);font-weight:700;line-height:1.22;letter-spacing:.04em}
+  h1{font-size:clamp(2.4rem,7.5vw,5rem);font-weight:700;line-height:1.28;letter-spacing:.05em}
   h2{font-size:clamp(1.7rem,4.6vw,3rem);font-weight:700;line-height:1.35;letter-spacing:.05em;margin-bottom:1rem}
   .lead{font-size:clamp(.95rem,1.6vw,1.08rem);font-weight:400;line-height:2;color:var(--sub)}
-  .grad{background:linear-gradient(92deg,var(--aqua),var(--lavender));-webkit-background-clip:text;background-clip:text;color:transparent}
 
   .card{
     background:var(--card-bg);
     border:1px solid var(--card-line);
     border-radius:28px;
     padding:clamp(1.6rem,4vw,3rem);
-    box-shadow:0 24px 60px rgba(30,40,80,.12);
-    backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);
+    box-shadow:0 24px 60px rgba(40,42,55,.14);
+    backdrop-filter:blur(18px) saturate(1.15);-webkit-backdrop-filter:blur(18px) saturate(1.15);
     max-width:560px;
   }
   .card--left{margin-right:auto}
   .card--right{margin-left:auto}
 
-  /* hero */
-  .hero{min-height:100vh;text-align:center;justify-content:center}
-  .hero .inner{padding-top:3rem}
-  .hero .lead{margin-top:1.6rem}
+  /* 各シーン（動画 20秒 を 640vh に線形マッピング）
+     hero 0-100vh ≒ 0-3.1s   : ボトル
+     drop 100-200vh ≒ 3.1-6.3s : スポイトの一滴
+     skin 200-300vh ≒ 6.3-9.4s : 手肌のしずく
+     ing  300-490vh ≒ 9.4-15.3s: 塗布〜なじませ
+     cta  490-640vh ≒ 15.3-20s : 微笑みと商品   */
+  .sec-hero{min-height:100vh}
+  .sec-hero .inner{max-width:560px}
+  .sec-drop{min-height:100vh}
+  .sec-skin{min-height:100vh}
+  .sec-ing{min-height:190vh}
+  .sec-cta{min-height:150vh}
+  .sec-cta .inner{max-width:520px}
+
   .scroll-cue{
     position:absolute;bottom:2.2rem;left:50%;transform:translateX(-50%);
     font-family:'Marcellus',serif;font-size:.72rem;letter-spacing:.4em;color:var(--sub);
@@ -107,53 +124,44 @@
   }
   @keyframes cue{0%{transform:scaleY(0);transform-origin:top}45%{transform:scaleY(1);transform-origin:top}55%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
 
-  .sec-assemble{min-height:200vh;align-items:flex-end;padding-bottom:22vh;justify-content:center;text-align:center}
-  .sec-assemble .card{max-width:640px;margin:0 auto}
-  .sec-detail{min-height:150vh}
-  .sec-detail .card{max-width:480px}
-  .sec-ingredients{min-height:150vh}
-  .sec-features{min-height:150vh}
-  .sec-cta{min-height:120vh;text-align:center;justify-content:center}
-
   /* ingredients */
   .ing-list{display:flex;flex-direction:column;gap:1.4rem;margin-top:1.8rem}
   .ing{display:flex;gap:1.2rem;align-items:baseline}
-  .ing .no{font-family:'Marcellus',serif;font-size:1.5rem;color:var(--aqua);min-width:2.4rem}
+  .ing .no{font-family:'Marcellus',serif;font-size:1.5rem;color:var(--silver);min-width:2.4rem}
   .ing dt{font-weight:700;font-size:1.02rem;letter-spacing:.06em;margin-bottom:.25rem}
   .ing dd{font-size:.88rem;line-height:1.9;color:var(--sub)}
 
-  /* features */
-  .spec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-top:1.8rem}
-  .spec{
-    background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.65);
-    border-radius:20px;padding:1.3rem 1.1rem;text-align:center;
-  }
-  .spec .val{font-family:'Marcellus',serif;font-size:clamp(1.3rem,2.6vw,1.8rem);letter-spacing:.06em;color:var(--ink)}
-  .spec .lab{font-size:.75rem;letter-spacing:.14em;color:var(--sub);margin-top:.4rem}
-
   /* cta */
-  .price{font-family:'Marcellus',serif;font-size:clamp(1.6rem,3.4vw,2.3rem);letter-spacing:.08em;margin:1.6rem 0 .4rem}
+  .price{font-family:'Marcellus',serif;font-size:clamp(1.6rem,3.4vw,2.3rem);letter-spacing:.08em;margin:1.4rem 0 .2rem}
   .price small{font-size:.55em;color:var(--sub);letter-spacing:.12em}
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.1rem}
+  .chip{
+    font-size:.75rem;letter-spacing:.1em;color:var(--ink);
+    background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7);
+    padding:.4em 1em;border-radius:999px;
+  }
   .cta-btn{
-    display:inline-block;margin-top:1.4rem;text-decoration:none;color:#fff;
+    display:inline-block;margin-top:1.6rem;text-decoration:none;color:#fff;
     font-weight:500;letter-spacing:.18em;font-size:.95rem;
-    background:linear-gradient(92deg,#6ea3bd,#9a83c9);
+    background:linear-gradient(92deg,#8e939c,#c08d97);
     padding:1em 3.2em;border-radius:999px;
-    box-shadow:0 16px 40px rgba(122,140,200,.35);
+    box-shadow:0 16px 40px rgba(120,110,125,.35);
     transition:transform .25s,box-shadow .25s;
   }
-  .cta-btn:hover{transform:translateY(-3px);box-shadow:0 22px 50px rgba(122,140,200,.45)}
-  .demo-note{margin-top:2.2rem;font-size:.75rem;letter-spacing:.08em;color:var(--sub)}
+  .cta-btn:hover,.cta-btn:focus-visible{transform:translateY(-3px);box-shadow:0 22px 50px rgba(120,110,125,.45)}
+  .demo-note{margin-top:2rem;font-size:.75rem;letter-spacing:.08em;color:var(--sub)}
 
   footer{
     position:relative;z-index:2;text-align:center;
     padding:2.5rem 1rem 3rem;font-size:.72rem;letter-spacing:.1em;color:var(--sub);
+    background:linear-gradient(180deg,transparent,rgba(233,232,230,.9) 40%);
   }
 
   @media (max-width:640px){
-    .spec-grid{grid-template-columns:1fr 1fr}
     .card{max-width:100%}
-    .sec-ingredients,.sec-features{align-items:flex-end;padding-bottom:14vh}
+    .sec-hero,.sec-drop,.sec-skin{align-items:flex-end;padding-bottom:16vh}
+    .sec-ing{align-items:flex-end;padding-bottom:14vh}
+    .sec-cta{align-items:flex-end;padding-bottom:18vh}
   }
   @media (prefers-reduced-motion:reduce){
     .scroll-cue::after{animation:none}
@@ -163,9 +171,12 @@
 </head>
 <body>
 
-<div id="loader"><div class="mark">LUNÉA</div></div>
+<div id="loader"><div class="mark">LUNÉA</div><div class="note">LOADING FILM</div></div>
 
-<canvas id="webgl"></canvas>
+<!-- ブランドムービー：スクロールでコマ送り再生 -->
+<video id="film" src="assets/lunea-film.mp4" poster="assets/poster.jpg"
+       muted playsinline preload="auto" aria-label="LUNÉA ブランドムービー：ボトルから一滴が生まれ、肌になじむまで"></video>
+<img class="film-fallback" src="assets/poster.jpg" alt="LUNÉA モイストエッセンスローションのボトル">
 <div class="vignette"></div>
 <div class="progress"></div>
 
@@ -176,40 +187,42 @@
 
 <main id="scroll-story">
 
-  <!-- 1. HERO -->
-  <section class="hero">
-    <div class="wrap inner">
-      <p class="eyebrow">Lunéa — Moist Essence Lotion</p>
-      <h1><span class="grad">うるおい</span>が、<br>かたちになる。</h1>
-      <p class="lead">肌の記憶に残る、ひとしずく。<br>スクロールして、その構造へ。</p>
+  <!-- 1. HERO（0-3秒：ボトル） -->
+  <section class="sec-hero">
+    <div class="wrap">
+      <div class="inner" data-reveal>
+        <p class="eyebrow">Lunéa — Moist Essence Lotion</p>
+        <h1>ひとしずくが、<br>肌の記憶になる。</h1>
+        <p class="lead" style="margin-top:1.4rem">20秒のフィルムに込めた、うるおいの旅。<br>スクロールで、再生してください。</p>
+      </div>
     </div>
     <div class="scroll-cue">SCROLL</div>
   </section>
 
-  <!-- 2. ASSEMBLE -->
-  <section class="sec-assemble">
-    <div class="wrap">
-      <div class="card" data-reveal>
-        <p class="eyebrow">Structure</p>
-        <h2>分解して、<br class="sp">たどり着いた答え。</h2>
-        <p class="lead">キャップからボトル、そして満たされるエッセンスまで。LUNÉAは、手に触れるすべての要素をゼロから設計しました。</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 3. DETAIL -->
-  <section class="sec-detail">
+  <!-- 2. DROP（3-6秒：スポイトの一滴） -->
+  <section class="sec-drop">
     <div class="wrap">
       <div class="card card--left" data-reveal>
         <p class="eyebrow">Precision</p>
-        <h2>一滴まで、計算ずく。</h2>
-        <p class="lead">注ぎ口の角度は12°。傾けるたび、手のひらにいつも同じ量のうるおいを届けます。</p>
+        <h2>必要なのは、<br>たった一滴。</h2>
+        <p class="lead">スポイトが計るのは 0.3mL。多すぎず、少なすぎず。肌が一度に受け取れる、ちょうどの量だけを届けます。</p>
       </div>
     </div>
   </section>
 
-  <!-- 4. INGREDIENTS -->
-  <section class="sec-ingredients">
+  <!-- 3. SKIN（6-9秒：手肌のしずく） -->
+  <section class="sec-skin">
+    <div class="wrap">
+      <div class="card card--right" data-reveal>
+        <p class="eyebrow">Texture</p>
+        <h2>触れた瞬間、とける。</h2>
+        <p class="lead">肌温でほどける高含水エッセンス。こすらず、押し込まず。置くだけで、角質層へすっとなじみます。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. INGREDIENTS（9-15秒：塗布〜なじませ） -->
+  <section class="sec-ing">
     <div class="wrap">
       <div class="card card--left" data-reveal>
         <p class="eyebrow">Ingredients</p>
@@ -223,365 +236,99 @@
     </div>
   </section>
 
-  <!-- 5. FEATURES -->
-  <section class="sec-features">
-    <div class="wrap">
-      <div class="card card--right" data-reveal>
-        <p class="eyebrow">Details</p>
-        <h2>毎日のことだから、<br>細部まで。</h2>
-        <div class="spec-grid">
-          <div class="spec"><div class="val">150<span style="font-size:.6em"> mL</span></div><div class="lab">約2ヶ月分</div></div>
-          <div class="spec"><div class="val">pH 5.5</div><div class="lab">弱酸性</div></div>
-          <div class="spec"><div class="val">0%</div><div class="lab">無香料・無着色</div></div>
-          <div class="spec"><div class="val">Free</div><div class="lab">アルコールフリー</div></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 6. CTA -->
+  <!-- 5. CTA（15-20秒：微笑みと商品） -->
   <section class="sec-cta" id="cta">
-    <div class="wrap" data-reveal>
-      <p class="eyebrow">Lunéa Moist Essence Lotion</p>
-      <h2>肌は、今日も<br class="sp">生まれ変わる。</h2>
-      <p class="price">¥4,290 <small>（税込）</small></p>
-      <a class="cta-btn" href="#" onclick="return false">購入する（デモ）</a>
-      <p class="demo-note">※ 本サイトは架空ブランドによる技術デモです。実在の商品・販売はありません。</p>
+    <div class="wrap">
+      <div class="inner" data-reveal>
+        <p class="eyebrow">Lunéa Moist Essence Lotion</p>
+        <h2>素肌が、<br>光を返す。</h2>
+        <p class="price">¥4,290 <small>（税込）</small></p>
+        <div class="chips">
+          <span class="chip">150mL・約2ヶ月分</span>
+          <span class="chip">pH5.5 弱酸性</span>
+          <span class="chip">無香料・無着色</span>
+          <span class="chip">アルコールフリー</span>
+        </div>
+        <a class="cta-btn" href="#" onclick="return false">購入する（デモ）</a>
+        <p class="demo-note">※ 本サイトは架空ブランドによる技術デモです。実在の商品・販売はありません。</p>
+      </div>
     </div>
   </section>
 
 </main>
 
-<footer>© 2026 LUNÉA — Three.js × GSAP ScrollTrigger Demo</footer>
+<footer>© 2026 LUNÉA — Scroll Film Demo（GSAP ScrollTrigger × Video Scrubbing）</footer>
 
-<!-- GSAP -->
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-
-<!-- Three.js (ES Modules) -->
-<script async src="https://unpkg.com/es-module-shims@1.8.3/dist/es-module-shims.js"></script>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
-
-<script type="module">
-import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-
+<script>
 gsap.registerPlugin(ScrollTrigger);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ============================================================
-   DOM アニメーション（3D の成否に関わらず動く）
-============================================================ */
-function initDomAnimations(){
-  // セクションカードのフェードイン
-  gsap.utils.toArray('[data-reveal]').forEach(el => {
-    gsap.from(el, {
-      opacity: 0, y: 48, duration: 0.9, ease: 'power3.out',
-      scrollTrigger: { trigger: el, start: 'top 78%', toggleActions: 'play none none reverse' }
-    });
-  });
-  // ヒーローはスクロールで退場
-  gsap.to('.hero .inner', {
-    opacity: 0, y: -70, ease: 'none',
-    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom 55%', scrub: true }
-  });
-  gsap.to('.scroll-cue', {
-    opacity: 0, ease: 'none',
-    scrollTrigger: { trigger: '.hero', start: 'top top', end: '30% top', scrub: true }
-  });
-  // 上部プログレスバー
-  gsap.to('.progress', {
-    scaleX: 1, ease: 'none',
-    scrollTrigger: { trigger: '#scroll-story', start: 'top top', end: 'bottom bottom', scrub: 0.3 }
-  });
-}
+/* ---------- 映像スクラブ ---------- */
+const video = document.getElementById('film');
+const FALLBACK_DURATION = 20.04;
+const filmDuration = () =>
+  (isFinite(video.duration) && video.duration > 0) ? video.duration : FALLBACK_DURATION;
 
-/* ============================================================
-   Three.js シーン
-============================================================ */
-function initThree(){
-  const canvas = document.getElementById('webgl');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+video.pause();
 
-  const scene = new THREE.Scene();
+// iOS 系での seek 描画を確実にするためのワンタイムアンロック
+const unlock = () => { video.play().then(() => video.pause()).catch(() => {}); };
+window.addEventListener('touchstart', unlock, { once: true, passive: true });
 
-  // 背景（CSSグラデーションと揃えたキャンバステクスチャ）
-  {
-    const c = document.createElement('canvas'); c.width = 32; c.height = 512;
-    const g = c.getContext('2d');
-    const grad = g.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#f7f4ef');
-    grad.addColorStop(1, '#e6ecf4');
-    g.fillStyle = grad; g.fillRect(0, 0, 32, 512);
-    const bg = new THREE.CanvasTexture(c);
-    bg.colorSpace = THREE.SRGBColorSpace;
-    scene.background = bg;
-  }
+video.addEventListener('error', () => document.body.classList.add('no-video'));
 
-  const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 60);
-  camera.position.set(0, 0.9, 8.4);
-  const lookTarget = { x: 0, y: 0.35, z: 0 };
-
-  // 環境光（映り込み）
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-
-  const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
-  keyLight.position.set(3, 5, 4);
-  scene.add(keyLight);
-  const fillLight = new THREE.DirectionalLight(0xcfd8ff, 0.5);
-  fillLight.position.set(-4, 2, -3);
-  scene.add(fillLight);
-
-  /* ---------- 商品（化粧水ボトル） ---------- */
-  const root = new THREE.Group();      // ScrollTrigger が動かす
-  root.position.set(0, -1.3, 0);
-  root.rotation.y = -0.35;
-  scene.add(root);
-  const product = new THREE.Group();   // アイドル時の浮遊用
-  root.add(product);
-
-  // ガラスボトル本体（Lathe: 肩の丸みと注ぎ口）
-  const bottleProfile = [
-    [0.0, 0.0], [0.5, 0.0], [0.58, 0.06], [0.62, 0.35],
-    [0.62, 1.6], [0.56, 1.85], [0.34, 2.02], [0.24, 2.1], [0.24, 2.4]
-  ].map(p => new THREE.Vector2(p[0], p[1]));
-  const glassGeo = new THREE.LatheGeometry(bottleProfile, 96);
-  const glassMat = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff, metalness: 0, roughness: 0.05,
-    transmission: 1, thickness: 0.7, ior: 1.5,
-    attenuationColor: 0xe8f6f9, attenuationDistance: 2.5,
-    clearcoat: 1, clearcoatRoughness: 0.1,
-    specularIntensity: 1, envMapIntensity: 0.75
-  });
-  const glass = new THREE.Mesh(glassGeo, glassMat);
-  product.add(glass);
-
-  // 中のエッセンス（充填アニメーション用に底が原点）
-  // ※ transmission ガラス越しに見せるため不透明マテリアルにする
-  //   （three.js の透過バッファは transparent なオブジェクトを描画しない）
-  const liquidProfile = [
-    [0.0, 0.06], [0.44, 0.06], [0.55, 0.32], [0.55, 1.5], [0.44, 1.66], [0.0, 1.7]
-  ].map(p => new THREE.Vector2(p[0], p[1]));
-  const liquidMat = new THREE.MeshPhysicalMaterial({
-    color: 0x8ecfe0, metalness: 0, roughness: 0.18,
-    emissive: 0x2e7f97, emissiveIntensity: 0.05
-  });
-  const liquid = new THREE.Mesh(new THREE.LatheGeometry(liquidProfile, 64), liquidMat);
-  liquid.visible = false;
-  product.add(liquid);
-
-  // ラベル（CanvasTexture にロゴを描画）
-  const labelCanvas = document.createElement('canvas');
-  labelCanvas.width = 2048; labelCanvas.height = 512;
-  const labelTex = new THREE.CanvasTexture(labelCanvas);
-  labelTex.colorSpace = THREE.SRGBColorSpace;
-  labelTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  function drawLabel(){
-    const g = labelCanvas.getContext('2d');
-    g.fillStyle = '#fcfbf8'; g.fillRect(0, 0, 2048, 512);
-    g.strokeStyle = 'rgba(90,100,140,.35)'; g.lineWidth = 3;
-    g.strokeRect(834, 80, 380, 352);
-    g.textAlign = 'center'; g.fillStyle = '#262a36';
-    g.font = '74px Marcellus, serif';
-    g.fillText('LUNÉA', 1024, 240);
-    g.font = '300 26px "Zen Kaku Gothic New", sans-serif';
-    g.fillStyle = '#5f6470';
-    g.fillText('MOIST ESSENCE LOTION', 1024, 296);
-    g.fillText('150 mL', 1024, 400);
-    g.beginPath(); g.moveTo(940, 336); g.lineTo(1108, 336);
-    g.strokeStyle = 'rgba(90,100,140,.5)'; g.lineWidth = 2; g.stroke();
-    labelTex.needsUpdate = true;
-  }
-  drawLabel();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawLabel);
-  const labelMat = new THREE.MeshStandardMaterial({
-    map: labelTex, roughness: 0.55, metalness: 0, side: THREE.DoubleSide
-  });
-  const label = new THREE.Mesh(new THREE.CylinderGeometry(0.635, 0.635, 0.66, 96, 1, true), labelMat);
-  const LABEL_ROT = Math.PI; // テクスチャ中央(u=0.5)を正面(+z)へ
-  product.add(label);
-
-  // キャップ（シャンパンゴールドのメタル）
-  const capGroup = new THREE.Group();
-  const capMat = new THREE.MeshStandardMaterial({ color: 0xd9c493, metalness: 1, roughness: 0.28 });
-  const capBody = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.55, 64), capMat);
-  capGroup.add(capBody);
-  const capTop = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.3, 0.06, 64),
-    new THREE.MeshStandardMaterial({ color: 0xe6d4a8, metalness: 1, roughness: 0.18 }));
-  capTop.position.y = 0.305;
-  capGroup.add(capTop);
-  const capRing = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.018, 24, 72),
-    new THREE.MeshStandardMaterial({ color: 0xf0e2bd, metalness: 1, roughness: 0.15 }));
-  capRing.rotation.x = Math.PI / 2;
-  capRing.position.y = -0.24;
-  capGroup.add(capRing);
-  product.add(capGroup);
-
-  // 接地の影（放射グラデーション）
-  {
-    const c = document.createElement('canvas'); c.width = c.height = 256;
-    const g = c.getContext('2d');
-    const grad = g.createRadialGradient(128, 128, 10, 128, 128, 128);
-    grad.addColorStop(0, 'rgba(35,42,66,.4)');
-    grad.addColorStop(1, 'rgba(35,42,66,0)');
-    g.fillStyle = grad; g.fillRect(0, 0, 256, 256);
-    const shadowTex = new THREE.CanvasTexture(c);
-    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(3, 3),
-      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
-    shadow.rotation.x = -Math.PI / 2;
-    shadow.position.y = 0.002;
-    root.add(shadow);
-  }
-
-  // うるおいパーティクル
-  const particleMat = (() => {
-    const c = document.createElement('canvas'); c.width = c.height = 64;
-    const g = c.getContext('2d');
-    const grad = g.createRadialGradient(32, 32, 2, 32, 32, 30);
-    grad.addColorStop(0, 'rgba(255,255,255,.95)');
-    grad.addColorStop(0.5, 'rgba(190,220,235,.4)');
-    grad.addColorStop(1, 'rgba(190,220,235,0)');
-    g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
-    const tex = new THREE.CanvasTexture(c);
-    return new THREE.PointsMaterial({
-      map: tex, size: 0.14, transparent: true, opacity: 0.25,
-      depthWrite: false, sizeAttenuation: true
-    });
-  })();
-  const P_COUNT = 140;
-  const pPos = new Float32Array(P_COUNT * 3);
-  for (let i = 0; i < P_COUNT; i++) {
-    const r = 2.2 + Math.random() * 2.6;
-    const a = Math.random() * Math.PI * 2;
-    pPos[i * 3] = Math.cos(a) * r;
-    pPos[i * 3 + 1] = -1.5 + Math.random() * 4.3;
-    pPos[i * 3 + 2] = Math.sin(a) * r;
-  }
-  const pGeo = new THREE.BufferGeometry();
-  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-  const particles = new THREE.Points(pGeo, particleMat);
-  scene.add(particles);
-
-  /* ---------- 組み立て前（分解）状態 ---------- */
-  const ASSEMBLED = { label: { x: 0, y: 0.88, z: 0 }, cap: 2.5 };
-  glass.position.y = -1.0;
-  glass.rotation.z = 0.3;
-  liquid.scale.y = 0.001;
-  label.position.set(-1.9, 1.8, 0.6);
-  label.rotation.y = LABEL_ROT - 2.2;
-  capGroup.position.y = 3.9;
-  capGroup.rotation.set(0, 3.5, -0.4);
-
-  /* ---------- スクロール連動タイムライン ----------
-     セクション高の比率: hero 1 / assemble 2 / detail 1.5 /
-     ingredients 1.5 / features 1.5 / cta 1.2 → 合計 8.7      */
-  const TOTAL = 8.7;
-  const sideShift = window.innerWidth < 768 ? 0.55 : 1.15;
-  const tl = gsap.timeline({
-    defaults: { ease: 'none' },
-    scrollTrigger: {
-      trigger: '#scroll-story',
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: reduceMotion ? true : 1
+let lastT = -1;
+const proxy = { p: 0 };
+gsap.to(proxy, {
+  p: 1, ease: 'none',
+  scrollTrigger: {
+    trigger: '#scroll-story',
+    start: 'top top',
+    end: 'bottom bottom',
+    scrub: reduceMotion ? true : 0.6
+  },
+  onUpdate(){
+    const t = Math.min(proxy.p * filmDuration(), filmDuration() - 0.05);
+    // 1/30 秒未満の差分はスキップして seek 負荷を抑える
+    if (Math.abs(t - lastT) > 0.033 && video.readyState >= 2) {
+      video.currentTime = t;
+      lastT = t;
     }
-  });
-
-  // 全編を通してゆっくり回転（4回転で正面着地）
-  tl.to(root.rotation, { y: Math.PI * 8, duration: TOTAL }, 0);
-
-  // ヒーロー〜組み立て：カメラ寄り
-  tl.to(camera.position, { y: 0.5, z: 6.6, duration: 3, ease: 'power1.inOut' }, 0);
-
-  // 組み上がり
-  tl.to(glass.position, { y: 0, duration: 1.2, ease: 'power1.inOut' }, 0.4);
-  tl.to(glass.rotation, { z: 0, duration: 1.2, ease: 'power1.inOut' }, 0.4);
-  tl.to(label.position, { x: ASSEMBLED.label.x, y: ASSEMBLED.label.y, z: ASSEMBLED.label.z, duration: 1.0, ease: 'power1.inOut' }, 1.2);
-  tl.to(label.rotation, { y: LABEL_ROT, duration: 1.0, ease: 'power1.inOut' }, 1.2);
-  tl.to(capGroup.position, { y: ASSEMBLED.cap, duration: 1.1, ease: 'power1.inOut' }, 1.6);
-  tl.to(capGroup.rotation, { y: 0, z: 0, duration: 1.1, ease: 'power1.inOut' }, 1.6);
-  tl.set(liquid, { visible: true }, 1.98);
-  tl.to(liquid.scale, { y: 1, duration: 0.9, ease: 'power1.in' }, 2.0);
-
-  // ディテール：キャップへ寄る（視線を左にずらしボトルを右に置く）
-  tl.to(camera.position, { x: 1.2, y: 1.2, z: 3.5, duration: 1.4, ease: 'power1.inOut' }, 3.05);
-  tl.to(lookTarget, { x: -0.5, y: 1.05, duration: 1.4, ease: 'power1.inOut' }, 3.05);
-
-  // 成分：引きで右へ（テキストは左）
-  tl.to(camera.position, { x: 0, y: 0.35, z: 6.8, duration: 1.3, ease: 'power1.inOut' }, 4.55);
-  tl.to(lookTarget, { x: 0, y: 0.05, duration: 1.3, ease: 'power1.inOut' }, 4.55);
-  tl.to(root.position, { x: sideShift, duration: 1.3, ease: 'power1.inOut' }, 4.55);
-  tl.to(particleMat, { opacity: 0.55, duration: 1.0 }, 4.7);
-
-  // 仕様：左へ（テキストは右）
-  tl.to(root.position, { x: -sideShift, duration: 1.4, ease: 'power1.inOut' }, 6.05);
-
-  // CTA：中央へ戻して着地
-  tl.to(root.position, { x: 0, duration: 1.2, ease: 'power1.inOut' }, 7.55);
-  tl.to(camera.position, { x: 0, y: 0.75, z: 7.3, duration: 1.2, ease: 'power1.inOut' }, 7.55);
-  tl.to(lookTarget, { y: 0.25, duration: 1.2, ease: 'power1.inOut' }, 7.55);
-  tl.to(particleMat, { opacity: 0.2, duration: 1.0 }, 7.55);
-
-  /* ---------- レンダーループ ---------- */
-  const clock = new THREE.Clock();
-  function tick(){
-    const t = clock.getElapsedTime();
-    if (!reduceMotion) {
-      product.position.y = Math.sin(t * 1.2) * 0.045;           // 浮遊
-      const pos = pGeo.attributes.position;
-      for (let i = 0; i < P_COUNT; i++) {                        // 上昇ドリフト
-        let y = pos.getY(i) + 0.0035;
-        if (y > 2.8) y = -1.5;
-        pos.setY(i, y);
-      }
-      pos.needsUpdate = true;
-    }
-    camera.lookAt(lookTarget.x, lookTarget.y, lookTarget.z);
-    renderer.render(scene, camera);
-    requestAnimationFrame(tick);
   }
-  tick();
+});
 
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+/* ---------- DOM アニメーション ---------- */
+gsap.utils.toArray('[data-reveal]').forEach(el => {
+  gsap.from(el, {
+    opacity: 0, y: 48, duration: 0.9, ease: 'power3.out',
+    scrollTrigger: { trigger: el, start: 'top 74%', toggleActions: 'play none none reverse' }
   });
-}
+});
+gsap.to('.sec-hero .inner', {
+  opacity: 0, y: -70, ease: 'none',
+  scrollTrigger: { trigger: '.sec-hero', start: 'top top', end: 'bottom 55%', scrub: true }
+});
+gsap.to('.scroll-cue', {
+  opacity: 0, ease: 'none',
+  scrollTrigger: { trigger: '.sec-hero', start: 'top top', end: '30% top', scrub: true }
+});
+gsap.to('.progress', {
+  scaleX: 1, ease: 'none',
+  scrollTrigger: { trigger: '#scroll-story', start: 'top top', end: 'bottom bottom', scrub: 0.3 }
+});
 
-/* ============================================================
-   起動
-============================================================ */
-initDomAnimations();
-try {
-  initThree();
-} catch (e) {
-  console.warn('WebGL unavailable — static fallback:', e);
-  document.body.classList.add('no-webgl');
-}
-
-// ローダーを閉じる
+/* ---------- ローダー ---------- */
 function hideLoader(){
   const loader = document.getElementById('loader');
   if (!loader || loader.dataset.done) return;
   loader.dataset.done = '1';
-  gsap.to(loader, { opacity: 0, duration: 0.7, delay: 0.2, onComplete: () => loader.remove() });
+  gsap.to(loader, { opacity: 0, duration: 0.7, delay: 0.15, onComplete: () => loader.remove() });
 }
-window.addEventListener('load', hideLoader);
-setTimeout(hideLoader, 3000);
+video.addEventListener('loadeddata', hideLoader);
+window.addEventListener('load', () => setTimeout(hideLoader, 2500));
+setTimeout(hideLoader, 4000);
 </script>
 </body>
 </html>
